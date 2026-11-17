@@ -8,6 +8,27 @@ A personal web client for [Hollo](https://github.com/fedify-dev/hollo), with a s
 
 Styled in the [Noctiluna colour scheme](https://github.com/luchadave/noctiluna-colourscheme), with dark backgrounds, soft light text, and pink accents. A moon over water logo completes the header and favicon.
 
+## Screenshots
+
+### Home
+
+The home feed in the Noctiluna colour scheme.
+
+![Noctiluna home feed](docs/screenshots/home.jpg)
+
+### Compose
+
+Write posts with media, custom emoji, code blocks, and polls.
+
+![Noctiluna post composer](docs/screenshots/compose.jpg)
+
+### Lists
+
+Switch between your list timelines.
+
+![Noctiluna list timeline](docs/screenshots/lists.jpg)
+
+
 ## Project scope
 
 I built Noctiluna for my own use. If it suits you too, you are welcome to use it, adapt it, or fork it.
