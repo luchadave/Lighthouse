@@ -1,0 +1,20 @@
+services:
+  noctiluna:
+    build: .
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    environment:
+      BODY_SIZE_LIMIT: 50M
+    volumes:
+      - noctiluna_data:/data
+    networks:
+      - caddy_net
+
+volumes:
+  noctiluna_data:
+
+networks:
+  caddy_net:
+    external: true
+    name: hollo_default
