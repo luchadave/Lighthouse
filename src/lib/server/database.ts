@@ -2,10 +2,10 @@
 import Database from 'better-sqlite3';
 import { mkdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
-import { NOCTILUNA_DATABASE_PATH } from '$app/env/private';
+import { LIGHTHOUSE_DATABASE_PATH } from '$app/env/private';
 
 const databasePath = resolve(
-  NOCTILUNA_DATABASE_PATH || './data/noctiluna.db'
+  LIGHTHOUSE_DATABASE_PATH || './data/noctiluna.db'
 );
 
 mkdirSync(dirname(databasePath), { recursive: true });

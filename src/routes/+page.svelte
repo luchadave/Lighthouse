@@ -1,10 +1,12 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import hljs from 'highlight.js/lib/common';
   import 'highlight.js/styles/github-dark.css';
   import { invalidateAll } from '$app/navigation';
   import {
     House,
     Search,
+    BookOpen,
     Bell,
     Code,
     SquarePen,
@@ -187,6 +189,19 @@ let pollErrors = $state<Record<string, string>>({});
   let bookmarksLoaded = $state(false);
   let loadingBookmarks = $state(false);
   let bookmarksError = $state('');
+  type ReadLaterPreviewItem = {
+  key: string;
+  kind: 'rss' | 'fediverse';
+  title: string;
+  source: string;
+  timestamp: number;
+  href: string;
+  unread: boolean;
+};
+
+let readLaterPreview = $state<ReadLaterPreviewItem[]>([]);
+let readLaterLoading = $state(false);
+let readLaterError = $state('');
   let lists = $state<{
   id: string;
   title: string;
@@ -805,6 +820,92 @@ async function toggleAccountFollow(account: SearchAccount) {
     );
   }
 }
+
+async function loadReadLaterPreview() {
+  if (readLaterLoading) return;
+
+  readLaterLoading = true;
+  readLaterError = '';
+
+  try {
+    const [rssResult, fediverseResult] = await Promise.allSettled([
+      fetch('/api/reading/saved').then(async (response) => {
+        if (!response.ok) throw new Error('RSS request failed');
+        return response.json();
+      }),
+      fetch('/api/bookmarks').then(async (response) => {
+        if (!response.ok) throw new Error('Fediverse request failed');
+        return response.json();
+      })
+    ]);
+
+    const items: ReadLaterPreviewItem[] = [];
+
+    if (rssResult.status === 'fulfilled') {
+      const articles = rssResult.value.articles ?? [];
+
+      for (const article of articles) {
+        items.push({
+          key: `rss-${article.id}`,
+          kind: 'rss',
+          title: article.title,
+          source: article.source,
+          timestamp: article.published ?? article.fetched_at,
+          href: `/reading/articles/${article.id}`,
+          unread: !article.read
+        });
+      }
+    }
+
+    if (fediverseResult.status === 'fulfilled') {
+      const bookmarks = fediverseResult.value.posts ?? [];
+
+      for (const bookmark of bookmarks) {
+        const plainText = bookmark.content
+          .replace(/<[^>]*>/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+
+        items.push({
+          key: `fediverse-${bookmark.id}`,
+          kind: 'fediverse',
+title: plainText || (
+  bookmark.mediaAttachments?.some(
+    (media: MediaAttachment) => media.type === 'image'
+  )
+    ? 'Photo post'
+    : bookmark.mediaAttachments?.length
+      ? 'Media post'
+      : 'Saved Fediverse post'
+),
+          source: bookmark.name,
+          timestamp: new Date(bookmark.time).getTime(),
+          href: bookmark.postUrl || '/reading/saved',
+          unread: false
+        });
+      }
+    }
+
+    readLaterPreview = items
+      .sort((a, b) => b.timestamp - a.timestamp)
+      .slice(0, 3);
+
+    if (
+      rssResult.status === 'rejected' ||
+      fediverseResult.status === 'rejected'
+    ) {
+      readLaterError = 'Some saved items could not be loaded.';
+    }
+    } catch {
+    readLaterError = 'Unable to load saved items.';
+  } finally {
+    readLaterLoading = false;
+  }
+}
+
+onMount(() => {
+  void loadReadLaterPreview();
+});
 
 async function loadBookmarks() {
   if (loadingBookmarks || bookmarksLoaded) return;
@@ -1457,6 +1558,7 @@ async function sharePost(post: Post) {
 }
 const navigation = [
   { name: 'Home', icon: House },
+  { name: 'Reading', icon: BookOpen },
   { name: 'Search', icon: Search },
   { name: 'Activity', icon: Bell },
   { name: 'Compose', icon: SquarePen },
@@ -1578,6 +1680,10 @@ function highlightCode(node: HTMLElement) {
           class="nav-item"
           onclick={() => {
   activeNav = item.name;
+if (item.name === 'Reading') {
+  window.location.href = '/reading/articles';
+  return;
+}
 
   if (item.name === 'Activity') {
     markNotificationsSeen();
@@ -3011,7 +3117,55 @@ disabled={
     />
   </div>
 {/if}
-  </main>
+   </main>
+
+  <aside class="read-later-panel" aria-label="Read Later">
+    <div class="read-later-heading">
+      <h2>Read Later</h2>
+      <a href="/reading/saved">View all</a>
+    </div>
+
+    <p class="read-later-description">
+      Your recently saved articles and posts.
+    </p>
+
+    <div class="read-later-preview">
+  {#if readLaterLoading}
+    <p>Loading saved items…</p>
+  {:else if readLaterPreview.length > 0}
+    <div class="read-later-items">
+      {#each readLaterPreview as item (item.key)}
+        <div class="read-later-item">
+          <span class="read-later-source">
+            {item.kind === 'rss' ? 'RSS' : 'Fediverse'} · {item.source}
+          </span>
+
+          <a
+            href={item.href}
+            target={item.kind === 'fediverse' ? '_blank' : undefined}
+            rel={item.kind === 'fediverse' ? 'noopener noreferrer' : undefined}
+            class="read-later-title"
+          >
+            {item.title}
+          </a>
+
+          {#if item.kind === 'rss' && item.unread}
+            <span class="read-later-unread">
+              <span aria-hidden="true">●</span> Unread
+            </span>
+          {/if}
+        </div>
+      {/each}
+    </div>
+  {:else}
+    <p>No saved items yet.</p>
+  {/if}
+
+  {#if readLaterError}
+    <p class="read-later-error">{readLaterError}</p>
+  {/if}
+</div>
+  </aside>
 </div>
 
 <style>
@@ -3038,7 +3192,7 @@ disabled={
   .app-shell {
     min-height: 100vh;
     display: grid;
-    grid-template-columns: 252px minmax(0, 1fr);
+grid-template-columns: 252px minmax(0, 1fr) 280px;
     background: #0a0a0a;
   }
 
@@ -4312,7 +4466,73 @@ margin-bottom: clamp(5px, 1.4vh, 12px);
     display: none;
   }
 
+/* Lighthouse Read Later sidebar */
+
+.read-later-panel {
+  min-width: 0;
+  padding: 42px 20px;
+  background: #111111;
+  border-left: 1px solid #242424;
+}
+
+.read-later-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.read-later-heading h2 {
+  margin: 0;
+  color: #f5f5f5;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.read-later-heading a {
+  color: #f472b6;
+  font-size: 12px;
+  text-decoration: none;
+}
+
+.read-later-heading a:hover {
+  text-decoration: underline;
+}
+
+.read-later-description {
+  margin: 12px 0 24px;
+  color: #a3a3a3;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.read-later-preview {
+  padding: 18px 14px;
+  border: 1px solid #303030;
+  border-radius: 10px;
+  background: #171717;
+  color: #a3a3a3;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.read-later-preview p {
+  margin: 0;
+}
+
+@media (max-width: 1100px) {
+  .read-later-panel {
+    display: none;
+  }
+}
+
   /* Responsive layout */
+
+@media (max-width: 1100px) {
+  .app-shell {
+    grid-template-columns: 252px minmax(0, 1fr);
+  }
+}
 
   @media (max-width: 900px) {
     .app-shell {
@@ -5518,6 +5738,64 @@ margin-bottom: clamp(5px, 1.4vh, 12px);
   .search-account-card {
     padding: 12px;
   }
+}
+
+.read-later-items {
+  display: flex;
+  flex-direction: column;
+}
+
+.read-later-item {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 14px 0;
+  border-bottom: 1px solid #303030;
+}
+
+.read-later-item:first-child {
+  padding-top: 0;
+}
+
+.read-later-item:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.read-later-source {
+  color: #a3a3a3;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+
+.read-later-title {
+  color: #f5f5f5;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+-webkit-box-orient: vertical;
+-webkit-line-clamp: 3;
+line-clamp: 3;
+overflow: hidden;
+}
+
+.read-later-title:hover {
+  color: #f472b6;
+}
+
+.read-later-unread {
+  color: #c084fc;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.read-later-error {
+  margin-top: 12px !important;
+  color: #fda4af;
+  font-size: 12px;
 }
 
 </style>

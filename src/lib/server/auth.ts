@@ -21,15 +21,15 @@ const CLIENT_ID = HOLLO_CLIENT_ID;
 const CLIENT_SECRET = HOLLO_CLIENT_SECRET;
 const REDIRECT_URI = HOLLO_REDIRECT_URI;
 
-const SESSION_COOKIE = 'noctiluna_session';
-const STATE_COOKIE = 'noctiluna_oauth_state';
-const VERIFIER_COOKIE = 'noctiluna_pkce_verifier';
+const SESSION_COOKIE = 'lighthouse_session';
+const STATE_COOKIE = 'lighthouse_oauth_state';
+const VERIFIER_COOKIE = 'lighthouse_pkce_verifier';
 
 const SESSION_DURATION = 60 * 60 * 24 * 7;
 
 function requireConfig() {
   if (!BASE_URL || !CLIENT_ID || !CLIENT_SECRET || !REDIRECT_URI) {
-    throw error(500, 'Noctiluna authentication configuration is incomplete.');
+    throw error(500, 'Lighthouse authentication configuration is incomplete.');
   }
 }
 
@@ -160,8 +160,6 @@ export async function completeLogin(
 }
 
 export function getSession(cookies: Cookies) {
-  requireConfig();
-
   const sessionId = cookies.get(SESSION_COOKIE);
 
   if (!sessionId || !/^[A-Za-z0-9_-]{40,50}$/.test(sessionId)) {

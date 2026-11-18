@@ -7,5 +7,5 @@ export const variables = defineEnvVars({
   HOLLO_CLIENT_SECRET: {},
   HOLLO_REDIRECT_URI: {},
   HOLLO_SESSION_SECRET: {},
-  NOCTILUNA_DATABASE_PATH: {}
+  LIGHTHOUSE_DATABASE_PATH: {}
 });
