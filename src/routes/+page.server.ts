@@ -168,7 +168,7 @@ export const load: PageServerLoad = async ({
   );
 
   const nextLink = timelineResponse.headers.get('link');
-  const nextUrl = nextLink?.match(/<([^>]+)>;\\s*rel="next"/)?.[1];
+  const nextUrl = nextLink?.match(/<([^>]+)>;\s*rel="next"/)?.[1];
 
   const nextMaxId = nextUrl
     ? new URL(nextUrl).searchParams.get('max_id')

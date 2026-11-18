@@ -219,6 +219,8 @@ let hashtagTimelineError = $state('');
 
   let nextMaxId = $state<string | null>(null);
   let loadingMorePosts = $state(false);
+  let pendingHomePosts = $state<Post[]>([]);
+  const homeRefreshInterval = 30_000;
   let timelineError = $state('');
   let notifications = $state<Notification[]>([]);
   let hasNewNotifications = $state(false);
@@ -578,10 +580,90 @@ quotingPost = null;
 });
 $effect(() => {
   posts = data.posts;
+  pendingHomePosts = [];
   profilePosts = data.profilePosts ?? [];
   nextMaxId = data.nextMaxId ?? null;
   notifications = data.notifications;
 });
+
+$effect(() => {
+  if (!data.account || activeNav !== 'Home') return;
+
+  const initialPosts = data.posts;
+  const controller = new AbortController();
+  let refreshing = false;
+
+  async function refreshHome() {
+    if (refreshing || document.hidden) return;
+    refreshing = true;
+
+    const sinceId = pendingHomePosts[0]?.id ?? posts[0]?.id;
+    const existingIds = new Set([...pendingHomePosts, ...posts].map(post => post.id));
+    const newPosts: Post[] = [];
+    const seenCursors = new Set<string>();
+    const params = new URLSearchParams();
+    if (sinceId) params.set('since_id', sinceId);
+
+    try {
+      const signal = AbortSignal.any([controller.signal, AbortSignal.timeout(15_000)]);
+      let firstPageCursor: string | null = null;
+
+      while (true) {
+        const response = await fetch(`/api/timeline?${params}`, { signal });
+        if (!response.ok) return;
+
+        const result: { posts: Post[]; nextMaxId: string | null } = await response.json();
+        if (!params.has('max_id')) firstPageCursor = result.nextMaxId;
+
+        for (const post of result.posts) {
+          if (existingIds.has(post.id)) continue;
+          existingIds.add(post.id);
+          newPosts.push(post);
+        }
+
+        const cursor = result.nextMaxId;
+        if (!sinceId || !cursor || result.posts.length === 0) break;
+        if (seenCursors.has(cursor)) return;
+        seenCursors.add(cursor);
+        params.set('max_id', cursor);
+      }
+
+      if (signal.aborted || data.posts !== initialPosts || newPosts.length === 0) return;
+      if (!sinceId) nextMaxId = firstPageCursor;
+
+      pendingHomePosts = [...newPosts, ...pendingHomePosts];
+      showNewHomePostsAtTop();
+    } catch {
+      // Keep the current feed available and retry on the next check.
+    } finally {
+      refreshing = false;
+    }
+  }
+
+  const interval = window.setInterval(refreshHome, homeRefreshInterval);
+  document.addEventListener('visibilitychange', refreshHome);
+  window.addEventListener('scroll', showNewHomePostsAtTop, { passive: true });
+
+  return () => {
+    controller.abort();
+    window.clearInterval(interval);
+    document.removeEventListener('visibilitychange', refreshHome);
+    window.removeEventListener('scroll', showNewHomePostsAtTop);
+  };
+});
+
+function showNewHomePostsAtTop() {
+  if (!document.hidden && window.scrollY <= 0 && pendingHomePosts.length > 0) {
+    showNewHomePosts();
+  }
+}
+
+function showNewHomePosts() {
+  const existingIds = new Set(posts.map(post => post.id));
+  posts = [...pendingHomePosts.filter(post => !existingIds.has(post.id)), ...posts];
+  pendingHomePosts = [];
+  window.scrollTo({ top: 0, behavior: 'instant' });
+}
 
 // Track the newest notification seen by this account in this browser.
 $effect(() => {
@@ -1881,6 +1963,13 @@ if (item.name === 'Hashtags') {
   activeNav === 'Hashtags'}
 
         <div class="timeline">
+{#if activeNav === 'Home' && pendingHomePosts.length > 0}
+  <div class="new-home-posts">
+    <button class="load-more-button" type="button" onclick={showNewHomePosts}>
+      Show {pendingHomePosts.length} new {pendingHomePosts.length === 1 ? 'post' : 'posts'}
+    </button>
+  </div>
+{/if}
 {#if activeNav === 'Profile' && data.account}
   <section class="profile-view">
     <div class="profile-banner">
@@ -3255,6 +3344,15 @@ margin-bottom: clamp(5px, 1.4vh, 12px);
     border-radius: 12px;
     transition: border-color 150ms;
   }
+
+.new-home-posts {
+  position: sticky;
+  top: 12px;
+  z-index: 2;
+  align-self: center;
+  height: 0;
+  margin-bottom: -10px;
+}
 
 .load-more-container {
   display: flex;
