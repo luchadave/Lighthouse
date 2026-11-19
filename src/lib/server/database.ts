@@ -5,7 +5,7 @@ import { dirname, resolve } from 'node:path';
 import { LIGHTHOUSE_DATABASE_PATH } from '$app/env/private';
 
 const databasePath = resolve(
-  LIGHTHOUSE_DATABASE_PATH || './data/noctiluna.db'
+  LIGHTHOUSE_DATABASE_PATH || './data/lighthouse-sessions.db'
 );
 
 mkdirSync(dirname(databasePath), { recursive: true });

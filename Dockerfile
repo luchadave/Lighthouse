@@ -4,7 +4,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends python3 make g+
 COPY package.json package-lock.json ./
 RUN npm ci
 COPY . .
-RUN HOLLO_BASE_URL=https://example.invalid HOLLO_CLIENT_ID=build-placeholder HOLLO_CLIENT_SECRET=build-placeholder HOLLO_REDIRECT_URI=https://example.invalid/auth/callback HOLLO_SESSION_SECRET=build-placeholder NOCTILUNA_DATABASE_PATH=/tmp/noctiluna-build.db npm run build
+RUN HOLLO_BASE_URL=https://example.invalid HOLLO_CLIENT_ID=build-placeholder HOLLO_CLIENT_SECRET=build-placeholder HOLLO_REDIRECT_URI=https://example.invalid/auth/callback HOLLO_SESSION_SECRET=build-placeholder LIGHTHOUSE_DATABASE_PATH=/tmp/lighthouse-build-sessions.db LIGHTHOUSE_RSS_DATABASE_PATH=/tmp/lighthouse-build-rss.db npm run build
 RUN npm prune --omit=dev --ignore-scripts
 
 FROM node:24-bookworm-slim AS runtime

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import favicon from '#lib/assets/favicon.svg';
+  const favicon = '/lighthouse-favicon.svg';
   import { page } from '$app/state';
   import type { LayoutProps } from './$types';
 

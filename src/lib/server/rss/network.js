@@ -25,7 +25,7 @@ export async function fetchFeed(value, headers = {}) {
   let url = webURL(value);
   const signal = AbortSignal.timeout(20000);
   for (let redirect = 0; redirect <= 5; redirect++) {
-    const response = await fetch(url, { dispatcher: agent, redirect: 'manual', signal, headers: { 'User-Agent': 'Lantern/0.1 RSS Reader', Accept: 'application/atom+xml, application/rss+xml, application/xml, text/xml', ...headers } });
+    const response = await fetch(url, { dispatcher: agent, redirect: 'manual', signal, headers: { 'User-Agent': 'Lighthouse/1.0 RSS Reader', Accept: 'application/atom+xml, application/rss+xml, application/xml, text/xml', ...headers } });
     if ([301,302,303,307,308].includes(response.status)) {
       await response.body?.cancel();
       const location = response.headers.get('location');

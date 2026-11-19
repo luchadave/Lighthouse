@@ -1,5 +1,5 @@
 services:
-  noctiluna:
+  lighthouse:
     build: .
     restart: unless-stopped
     env_file:
@@ -7,12 +7,12 @@ services:
     environment:
       BODY_SIZE_LIMIT: 50M
     volumes:
-      - noctiluna_data:/data
+      - lighthouse_data:/data
     networks:
       - caddy_net
 
 volumes:
-  noctiluna_data:
+  lighthouse_data:
 
 networks:
   caddy_net:

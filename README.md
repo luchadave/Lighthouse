@@ -1,115 +1,127 @@
-<p align="center">
-  <img src="static/noctiluna-mark.svg" alt="Noctiluna moon over water logo" width="80">
-</p>
+# Lighthouse
 
-# Noctiluna Client
+**A personal home for the Fediverse and RSS.**
 
-A personal web client for [Hollo](https://github.com/fedify-dev/hollo), with a single-column feed, compact sidebar, and quiet dark interface.
+Lighthouse is a lightweight, self-hosted web application that brings a Fediverse timeline and RSS feed reading together in one interface.
 
-Styled in the [Noctiluna colour scheme](https://github.com/luchadave/noctiluna-colourscheme), with dark backgrounds, soft light text, and pink accents. A moon over water logo completes the header and favicon.
+I built it primarily for myself, concentrating on the features I use rather than trying to make a comprehensive social networking client or feed reader. I love RSS and feed readers: they're a way to follow the web directly, without having an algorithm choose what matters. Lighthouse puts that reading alongside the Fediverse conversations I follow.
 
 ## Screenshots
 
-### Home
+### Fediverse home
 
-The home feed in the Noctiluna colour scheme.
+![Lighthouse Fediverse home timeline](docs/screenshots/home.jpg)
 
-![Noctiluna home feed](docs/screenshots/home.jpg)
+### RSS articles
 
-### Compose
+![Lighthouse RSS article list](docs/screenshots/articles.jpg)
 
-Write posts with media, custom emoji, code blocks, and polls.
+### Article reader
 
-![Noctiluna post composer](docs/screenshots/compose.jpg)
+![Lighthouse article reader](docs/screenshots/reader.jpg)
 
-### Lists
+### Read Later
 
-Switch between your list timelines.
+![Lighthouse Read Later view](docs/screenshots/read-later.jpg)
 
-![Noctiluna list timeline](docs/screenshots/lists.jpg)
+### Feed subscriptions
 
-
-## Project scope
-
-I built Noctiluna for my own use. If it suits you too, you are welcome to use it, adapt it, or fork it.
-
-The feature set is intentionally limited to what I need. There is no commitment to ongoing feature development, support, or a release schedule.
-
-Each deployment connects to one configured Hollo instance. Compatibility with other Fediverse servers has not been established.
+![Lighthouse feed subscriptions](docs/screenshots/feeds.jpg)
 
 ## Features
 
-- Single-column home feed with sidebar navigation.
-- Images, video playback, link previews, and polls.
-- Posting, replying, editing, and deleting your own posts.
-- Reposts, favourites, and bookmarks.
-- Search, following, list timelines, and followed hashtag timelines.
-- OAuth sign-in with PKCE and server-side SQLite sessions.
-- Noctiluna branding and an app version link in the account menu.
+### Fediverse
 
-## Technology
+- Home and list timelines
+- Notifications and follow requests
+- Followed hashtag timelines
+- Composing posts and interacting with posts
+- Images, video, polls and bookmarks
+- Basic account search and follow controls
 
-Built with SvelteKit 3, Svelte 5, TypeScript, Vite, SQLite through `better-sqlite3`, and Lucide icons. Production builds use the SvelteKit Node adapter.
+### RSS
 
-## Getting started
+- Subscribe to RSS and Atom feeds
+- Import subscriptions from OPML
+- Browse articles and read them in a dedicated reader
+- Save articles for later
+- Remove subscriptions while retaining saved articles
 
-You need a Hollo instance, OAuth application credentials, and Node.js with npm. The initial build was verified with Node.js 22.23.1.
+### Together
 
-```sh
-git clone https://github.com/luchadave/Noctiluna-client.git
-cd Noctiluna-client
+- One responsive interface for the Fediverse and RSS
+- A shared Read Later view with Fediverse bookmarks and saved RSS articles
+
+## Appearance
+
+Lighthouse uses my **Noctiluna colour scheme**: near-black backgrounds, dark surfaces, soft pink and purple accents, and off-white text.
+
+- [Noctiluna colour scheme](https://github.com/luchadave/noctiluna-colourscheme)
+
+The interface uses Manrope for UI text, Source Serif 4 for articles, and IBM Plex Mono for code.
+
+## Requirements
+
+- Node.js 24 and npm for local development
+- A Hollo instance with an OAuth application registered for Lighthouse
+- Persistent storage for the session and RSS SQLite databases
+
+Lighthouse has been developed and tested with **Hollo**. Compatibility with other Fediverse backends has not been verified.
+
+## Local development
+
+Clone the Lighthouse repository once it is published, then install dependencies:
+
+```bash
 npm ci
 ```
 
-Register an OAuth application on your Hollo instance with scopes `read write follow` and this development redirect URI:
-
-```text
-http://localhost:5173/auth/callback
-```
-
-Create `.env.local` in the project root:
+Create a `.env.local` file with your Hollo OAuth settings:
 
 ```dotenv
 HOLLO_BASE_URL=https://your-hollo-instance.example
 HOLLO_CLIENT_ID=your-client-id
 HOLLO_CLIENT_SECRET=your-client-secret
-HOLLO_REDIRECT_URI=http://localhost:5173/auth/callback
-NOCTILUNA_DATABASE_PATH=./data/noctiluna.db
+HOLLO_REDIRECT_URI=http://localhost:5174/auth/callback
+HOLLO_SESSION_SECRET=replace-with-a-long-random-secret
+LIGHTHOUSE_DATABASE_PATH=./data/lighthouse-sessions.db
+LIGHTHOUSE_RSS_DATABASE_PATH=./data/lighthouse-rss.db
 ```
 
-The redirect URI must exactly match the registered application. The database path defaults to `./data/noctiluna.db` if omitted.
+The redirect URI must match the value registered with your Hollo instance.
 
-`HOLLO_SESSION_SECRET` remains declared in the source but is not used by the current SQLite session implementation.
-
-Start the development server:
-
-```sh
+```bash
 npm run dev
 ```
 
-Open `http://localhost:5173` and sign in through Hollo.
+Open `http://localhost:5174`. To validate or build:
 
-## Checks and production builds
-
-```sh
+```bash
 npm run check
 npm run build
 ```
 
-The Node adapter produces the application in `build/`. See the [SvelteKit Node adapter documentation](https://svelte.dev/docs/kit/adapter-node) for runtime and reverse proxy configuration.
+## Container deployment
 
-For production:
+The project includes a multi-stage `Dockerfile` and `compose.yaml`. For production, create an untracked `.env.production` with your OAuth configuration and database paths pointing into the persistent `/data` directory:
 
-- Register the public HTTPS callback URL and update `HOLLO_REDIRECT_URI`.
-- Supply the environment variables to the Node process and configure the public origin.
-- Keep the SQLite database on persistent storage with a writable parent directory.
+```dotenv
+LIGHTHOUSE_DATABASE_PATH=/data/lighthouse-sessions.db
+LIGHTHOUSE_RSS_DATABASE_PATH=/data/lighthouse-rss.db
+```
 
-Development environment files are not automatically loaded by the production Node server.
+Also configure `HOLLO_BASE_URL`, `HOLLO_CLIENT_ID`, `HOLLO_CLIENT_SECRET`, `HOLLO_REDIRECT_URI` and `HOLLO_SESSION_SECRET` for the deployed instance. Register the production callback URL with Hollo.
 
-The database contains session access tokens and should remain private. Environment files, the default `data/` directory, and build output are excluded from Git.
+The supplied Compose configuration expects an existing external Docker network named `hollo_default`, shared with a reverse proxy. Adapt this for your own deployment. The Compose file also expects `.env.production` to be present.
+
+Do not commit environment files containing secrets, database files, or tokens.
+
+## Scope and limitations
+
+Lighthouse is a personal project with a deliberately limited feature set. It isn't intended to replace a fully featured Fediverse client or dedicated RSS reader. Some features are basic or incomplete, and it has only been tested against Hollo.
+
+I'm not planning ongoing feature development beyond my own needs. If Lighthouse suits you too, you're welcome to use it, adapt it, or fork it.
 
 ## License
 
-[MIT](LICENSE) — Copyright (c) 2026 Dave Winter.
-
-Third-party dependencies retain their respective licenses.
+Lighthouse is released under the [MIT License](LICENSE).

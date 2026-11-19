@@ -1638,10 +1638,10 @@ import LighthouseSidebar from '#lib/components/lighthouse/LighthouseSidebar.svel
 </script>
 
 <svelte:head>
-  <title>Noctiluna — Home</title>
+  <title>Lighthouse — Home</title>
   <meta name="description" content="Your personal federated social client." />
   <meta name="theme-color" content="#0a0a0a" />
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="icon" type="image/svg+xml" href="/lighthouse-favicon.svg" />
 </svelte:head>
 
 <main class="main-content">
@@ -1679,8 +1679,8 @@ import LighthouseSidebar from '#lib/components/lighthouse/LighthouseSidebar.svel
 {/if}
     <header class="mobile-header">
       <span class="mobile-brand">
-        <img src="/noctiluna-mark.svg" alt="" />
-        Noctiluna
+        <img src="/lighthouse-transparent.png" alt="" />
+        Lighthouse
       </span>
       <button aria-label="Notifications" onclick={() => {
         activeNav = 'Activity';
@@ -3440,7 +3440,7 @@ disabled={
   font-size: inherit;
 }
 
-/* Noctiluna syntax highlighting */
+/* Lighthouse syntax highlighting */
 
 .post-text :global(pre code.hljs) {
   display: block;

@@ -96,8 +96,7 @@
 </script>
   <aside class="sidebar">
     <div class="brand">
-      <img class="brand-mark" src="/noctiluna-mark.svg" alt="" />
-      <span>Noctiluna</span>
+      <img class="brand-mark" src="/lighthouse-transparent.png" alt="Lighthouse" />
     </div>
 
     <nav class="navigation" aria-label="Main navigation">
@@ -170,10 +169,8 @@
       {/if}
 
       <div class="account-menu-about">
-        <strong>Noctiluna</strong>
-        <a href="https://github.com/luchadave/Noctiluna-client" target="_blank" rel="noopener noreferrer">
-          Version {APP_VERSION}
-        </a>
+        <strong>Lighthouse</strong>
+        <span>Version {APP_VERSION}</span>
       </div>
     </div>
   {/if}
@@ -220,7 +217,7 @@
   overflow: hidden;
   padding: clamp(8px, 1.8vh, 16px) 20px
            clamp(6px, 1.4vh, 12px);
-  padding-top: 28px;
+  padding-top: 12px;
 }
 
   .brand {
@@ -228,8 +225,9 @@
   align-items: center;
   gap: 13px;
   padding: 0 10px;
-margin-top: 24px;
-margin-bottom: clamp(5px, 1.4vh, 12px);
+margin-top: 0;
+  min-height: 92px;
+margin-bottom: 8px;
   font-size: clamp(18px, 2.5vh, 23px);
   font-weight: 750;
   letter-spacing: -0.8px;
@@ -237,11 +235,12 @@ margin-bottom: clamp(5px, 1.4vh, 12px);
 }
 
 .brand-mark {
-  width: clamp(34px, 4.8vh, 40px);
-  height: clamp(34px, 4.8vh, 40px);
-  flex-shrink: 0;
   display: block;
+  width: 100%;
+  height: auto;
+  max-height: 76px;
   object-fit: contain;
+  object-position: left center;
 }
 
 .navigation {
@@ -427,16 +426,9 @@ margin-bottom: clamp(5px, 1.4vh, 12px);
   font-weight: 650;
 }
 
-.account-menu-about a {
-  width: fit-content;
-  color: #f472b6;
-  text-decoration: none;
-}
 
-.account-menu-about a:hover {
-  color: #f9a8d4;
-  text-decoration: underline;
-}
+
+
 
   
 .sidebar-section-divider {
