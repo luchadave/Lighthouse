@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="static/lighthouse-transparent.png" alt="Lighthouse logo" width="360">
+</p>
+
 # Lighthouse
 
 **A personal home for the Fediverse and RSS.**
