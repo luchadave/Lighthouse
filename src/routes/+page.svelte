@@ -1,4 +1,6 @@
 <script lang="ts">
+import ReadLaterPanel from '#lib/components/lighthouse/ReadLaterPanel.svelte';
+import ProfileSummary from '#lib/components/lighthouse/ProfileSummary.svelte';
   import { onMount } from 'svelte';
   import hljs from 'highlight.js/lib/common';
   import 'highlight.js/styles/github-dark.css';
@@ -13,6 +15,8 @@
     List,
     Hash,
     Bookmark,
+    Newspaper,
+    Rss,
     UserRound,
     Heart,
     MessageCircle,
@@ -151,7 +155,27 @@ type SearchAccount = {
   relationship: AccountRelationship | null;
 };
 
-  let activeNav = $state('Home');
+const fediverseViews = [
+  'Home',
+  'Search',
+  'Activity',
+  'Compose',
+  'Lists',
+  'Hashtags',
+  'Bookmarks',
+  'Profile'
+];
+
+const requestedView =
+  typeof window !== 'undefined'
+    ? new URLSearchParams(window.location.search).get('view')
+    : null;
+
+let activeNav = $state(
+  requestedView && fediverseViews.includes(requestedView)
+    ? requestedView
+    : 'Home'
+);
   let accountMenuOpen = $state(false);
   let composeText = $state('');
   let replyingTo = $state<Post | null>(null);
@@ -189,19 +213,6 @@ let pollErrors = $state<Record<string, string>>({});
   let bookmarksLoaded = $state(false);
   let loadingBookmarks = $state(false);
   let bookmarksError = $state('');
-  type ReadLaterPreviewItem = {
-  key: string;
-  kind: 'rss' | 'fediverse';
-  title: string;
-  source: string;
-  timestamp: number;
-  href: string;
-  unread: boolean;
-};
-
-let readLaterPreview = $state<ReadLaterPreviewItem[]>([]);
-let readLaterLoading = $state(false);
-let readLaterError = $state('');
   let lists = $state<{
   id: string;
   title: string;
@@ -820,92 +831,6 @@ async function toggleAccountFollow(account: SearchAccount) {
     );
   }
 }
-
-async function loadReadLaterPreview() {
-  if (readLaterLoading) return;
-
-  readLaterLoading = true;
-  readLaterError = '';
-
-  try {
-    const [rssResult, fediverseResult] = await Promise.allSettled([
-      fetch('/api/reading/saved').then(async (response) => {
-        if (!response.ok) throw new Error('RSS request failed');
-        return response.json();
-      }),
-      fetch('/api/bookmarks').then(async (response) => {
-        if (!response.ok) throw new Error('Fediverse request failed');
-        return response.json();
-      })
-    ]);
-
-    const items: ReadLaterPreviewItem[] = [];
-
-    if (rssResult.status === 'fulfilled') {
-      const articles = rssResult.value.articles ?? [];
-
-      for (const article of articles) {
-        items.push({
-          key: `rss-${article.id}`,
-          kind: 'rss',
-          title: article.title,
-          source: article.source,
-          timestamp: article.published ?? article.fetched_at,
-          href: `/reading/articles/${article.id}`,
-          unread: !article.read
-        });
-      }
-    }
-
-    if (fediverseResult.status === 'fulfilled') {
-      const bookmarks = fediverseResult.value.posts ?? [];
-
-      for (const bookmark of bookmarks) {
-        const plainText = bookmark.content
-          .replace(/<[^>]*>/g, ' ')
-          .replace(/\s+/g, ' ')
-          .trim();
-
-        items.push({
-          key: `fediverse-${bookmark.id}`,
-          kind: 'fediverse',
-title: plainText || (
-  bookmark.mediaAttachments?.some(
-    (media: MediaAttachment) => media.type === 'image'
-  )
-    ? 'Photo post'
-    : bookmark.mediaAttachments?.length
-      ? 'Media post'
-      : 'Saved Fediverse post'
-),
-          source: bookmark.name,
-          timestamp: new Date(bookmark.time).getTime(),
-          href: bookmark.postUrl || '/reading/saved',
-          unread: false
-        });
-      }
-    }
-
-    readLaterPreview = items
-      .sort((a, b) => b.timestamp - a.timestamp)
-      .slice(0, 3);
-
-    if (
-      rssResult.status === 'rejected' ||
-      fediverseResult.status === 'rejected'
-    ) {
-      readLaterError = 'Some saved items could not be loaded.';
-    }
-    } catch {
-    readLaterError = 'Unable to load saved items.';
-  } finally {
-    readLaterLoading = false;
-  }
-}
-
-onMount(() => {
-  void loadReadLaterPreview();
-});
 
 async function loadBookmarks() {
   if (loadingBookmarks || bookmarksLoaded) return;
@@ -1558,15 +1483,39 @@ async function sharePost(post: Post) {
 }
 const navigation = [
   { name: 'Home', icon: House },
-  { name: 'Reading', icon: BookOpen },
   { name: 'Search', icon: Search },
   { name: 'Activity', icon: Bell },
   { name: 'Compose', icon: SquarePen },
-  { name: 'Lists', icon: List },
   { name: 'Hashtags', icon: Hash },
-  { name: 'Bookmarks', icon: Bookmark },
   { name: 'Profile', icon: UserRound }
-];
+  ];
+
+  function handleFediverseNavigation(name: string) {
+  activeNav = name;
+
+  if (name === 'Activity') {
+    markNotificationsSeen();
+  }
+
+  if (name === 'Hashtags') {
+    loadFollowedTags();
+  }
+
+  if (name === 'Compose' && customEmojis.length === 0) {
+    fetch('/api/emojis')
+      .then((response) => {
+        if (!response.ok) throw new Error('Failed to load emojis');
+        return response.json();
+      })
+      .then((emojis) => {
+        customEmojis = emojis;
+      })
+      .catch((error) => {
+        console.error('Unable to load custom emojis:', error);
+      });
+  }
+}
+
 function handleAttachmentChange(event: Event) {
   const input = event.currentTarget as HTMLInputElement;
 
@@ -1678,43 +1627,7 @@ function highlightCode(node: HTMLElement) {
         <button
           class:active={activeNav === item.name}
           class="nav-item"
-          onclick={() => {
-  activeNav = item.name;
-if (item.name === 'Reading') {
-  window.location.href = '/reading/articles';
-  return;
-}
-
-  if (item.name === 'Activity') {
-    markNotificationsSeen();
-  }
-
-  if (item.name === 'Bookmarks') {
-    loadBookmarks();
-  }
-
-if (item.name === 'Lists') {
-  loadLists();
-}
-
-if (item.name === 'Hashtags') {
-  loadFollowedTags();
-}
-
-  if (item.name === 'Compose' && customEmojis.length === 0) {
-    fetch('/api/emojis')
-      .then(response => {
-        if (!response.ok) throw new Error('Failed to load emojis');
-        return response.json();
-      })
-      .then(emojis => {
-        customEmojis = emojis;
-      })
-      .catch(error => {
-        console.error('Unable to load custom emojis:', error);
-      });
-  }
-}}
+          onclick={() => handleFediverseNavigation(item.name)}
         >
 <span class="nav-icon">
   <Icon size={21} strokeWidth={1.8} />
@@ -1726,6 +1639,35 @@ if (item.name === 'Hashtags') {
         </button>
       {/each}
     </nav>
+
+<div class="sidebar-section-divider"></div>
+
+<nav class="navigation" aria-label="Saved items">
+  <a class="nav-item" href="/reading/saved">
+    <span class="nav-icon">
+      <Bookmark size={21} strokeWidth={1.8} />
+    </span>
+    <span>Read Later</span>
+  </a>
+</nav>
+
+<div class="sidebar-section-divider"></div>
+
+<nav class="navigation" aria-label="RSS reading">
+  <a class="nav-item" href="/reading/articles">
+    <span class="nav-icon">
+      <Newspaper size={21} strokeWidth={1.8} />
+    </span>
+    <span>All Articles</span>
+  </a>
+
+  <a class="nav-item" href="/reading/feeds">
+    <span class="nav-icon">
+      <Rss size={21} strokeWidth={1.8} />
+    </span>
+    <span>Feeds</span>
+  </a>
+</nav>
 
     <div class="sidebar-bottom">
   {#if accountMenuOpen}
@@ -3119,53 +3061,10 @@ disabled={
 {/if}
    </main>
 
-  <aside class="read-later-panel" aria-label="Read Later">
-    <div class="read-later-heading">
-      <h2>Read Later</h2>
-      <a href="/reading/saved">View all</a>
-    </div>
-
-    <p class="read-later-description">
-      Your recently saved articles and posts.
-    </p>
-
-    <div class="read-later-preview">
-  {#if readLaterLoading}
-    <p>Loading saved items…</p>
-  {:else if readLaterPreview.length > 0}
-    <div class="read-later-items">
-      {#each readLaterPreview as item (item.key)}
-        <div class="read-later-item">
-          <span class="read-later-source">
-            {item.kind === 'rss' ? 'RSS' : 'Fediverse'} · {item.source}
-          </span>
-
-          <a
-            href={item.href}
-            target={item.kind === 'fediverse' ? '_blank' : undefined}
-            rel={item.kind === 'fediverse' ? 'noopener noreferrer' : undefined}
-            class="read-later-title"
-          >
-            {item.title}
-          </a>
-
-          {#if item.kind === 'rss' && item.unread}
-            <span class="read-later-unread">
-              <span aria-hidden="true">●</span> Unread
-            </span>
-          {/if}
-        </div>
-      {/each}
-    </div>
-  {:else}
-    <p>No saved items yet.</p>
-  {/if}
-
-  {#if readLaterError}
-    <p class="read-later-error">{readLaterError}</p>
-  {/if}
-</div>
-  </aside>
+  <aside class="right-sidebar">
+  <ProfileSummary account={data.account} />
+  <ReadLaterPanel />
+</aside>
 </div>
 
 <style>
@@ -4466,65 +4365,6 @@ margin-bottom: clamp(5px, 1.4vh, 12px);
     display: none;
   }
 
-/* Lighthouse Read Later sidebar */
-
-.read-later-panel {
-  min-width: 0;
-  padding: 42px 20px;
-  background: #111111;
-  border-left: 1px solid #242424;
-}
-
-.read-later-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.read-later-heading h2 {
-  margin: 0;
-  color: #f5f5f5;
-  font-size: 17px;
-  font-weight: 700;
-}
-
-.read-later-heading a {
-  color: #f472b6;
-  font-size: 12px;
-  text-decoration: none;
-}
-
-.read-later-heading a:hover {
-  text-decoration: underline;
-}
-
-.read-later-description {
-  margin: 12px 0 24px;
-  color: #a3a3a3;
-  font-size: 12px;
-  line-height: 1.5;
-}
-
-.read-later-preview {
-  padding: 18px 14px;
-  border: 1px solid #303030;
-  border-radius: 10px;
-  background: #171717;
-  color: #a3a3a3;
-  font-size: 13px;
-  line-height: 1.5;
-}
-
-.read-later-preview p {
-  margin: 0;
-}
-
-@media (max-width: 1100px) {
-  .read-later-panel {
-    display: none;
-  }
-}
 
   /* Responsive layout */
 
@@ -5740,62 +5580,47 @@ margin-bottom: clamp(5px, 1.4vh, 12px);
   }
 }
 
-.read-later-items {
+.right-sidebar {
   display: flex;
   flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+padding: 46px 20px 24px 0;
+  box-sizing: border-box;
 }
 
-.read-later-item {
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-  padding: 14px 0;
-  border-bottom: 1px solid #303030;
+@media (max-width: 1100px) {
+  .right-sidebar {
+    display: none;
+  }
 }
 
-.read-later-item:first-child {
-  padding-top: 0;
+.sidebar-section-divider {
+  height: 1px;
+  margin: 12px 16px;
+  background: #303030;
 }
 
-.read-later-item:last-child {
-  padding-bottom: 0;
-  border-bottom: 0;
+/* Lighthouse compact sidebar navigation */
+
+.sidebar .navigation {
+  gap: 2px;
 }
 
-.read-later-source {
-  color: #a3a3a3;
-  font-size: 11px;
-  overflow-wrap: anywhere;
-}
-
-.read-later-title {
-  color: #f5f5f5;
-  font-size: 13px;
-  font-weight: 600;
-  line-height: 1.5;
+.sidebar .nav-item {
+  padding-top: 9px;
+  padding-bottom: 9px;
   text-decoration: none;
-  overflow-wrap: anywhere;
-  display: -webkit-box;
--webkit-box-orient: vertical;
--webkit-line-clamp: 3;
-line-clamp: 3;
-overflow: hidden;
 }
 
-.read-later-title:hover {
-  color: #f472b6;
+.sidebar .nav-item:hover {
+  text-decoration: none;
 }
 
-.read-later-unread {
-  color: #c084fc;
-  font-size: 11px;
-  font-weight: 600;
-}
-
-.read-later-error {
-  margin-top: 12px !important;
-  color: #fda4af;
-  font-size: 12px;
+.sidebar-section-divider {
+  height: 1px;
+  margin: 8px 16px;
+  background: #303030;
 }
 
 </style>
