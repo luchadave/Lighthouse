@@ -47,8 +47,14 @@
   function handleFediverseNavigation(name: string) {
     accountMenuOpen = false;
 
-    if (window.location.pathname === '/' && onNavigate) {
-      onNavigate(name);
+    if (window.location.pathname === '/') {
+      if (onNavigate) {
+        onNavigate(name);
+      } else {
+        window.dispatchEvent(
+          new CustomEvent('lighthouse:navigate', { detail: name })
+        );
+      }
       return;
     }
 

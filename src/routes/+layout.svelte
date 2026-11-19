@@ -18,8 +18,7 @@
   <link rel="icon" href={favicon} />
 </svelte:head>
 
-{#if isReadingPage}
-  <div class="lighthouse-shell">
+<div class="lighthouse-shell">
     <LighthouseSidebar
       account={data.account}
       activeNav=""
@@ -34,10 +33,7 @@
       <ProfileSummary account={data.account} />
       <ReadLaterPanel />
     </aside>
-  </div>
-{:else}
-  {@render children()}
-{/if}
+</div>
 
 <style>
   :global(body) {

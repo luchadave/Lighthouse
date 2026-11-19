@@ -1496,6 +1496,28 @@ const navigation = [
     }
   });
 
+  onMount(() => {
+    const handleSharedNavigation = (event: Event) => {
+      const name = (event as CustomEvent<string>).detail;
+
+      if (fediverseViews.includes(name)) {
+        handleFediverseNavigation(name);
+      }
+    };
+
+    window.addEventListener(
+      'lighthouse:navigate',
+      handleSharedNavigation
+    );
+
+    return () => {
+      window.removeEventListener(
+        'lighthouse:navigate',
+        handleSharedNavigation
+      );
+    };
+  });
+
   function handleFediverseNavigation(name: string) {
   activeNav = name;
 
@@ -1620,14 +1642,6 @@ import LighthouseSidebar from '#lib/components/lighthouse/LighthouseSidebar.svel
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 </svelte:head>
 
-<div class="app-shell">
-
-  <LighthouseSidebar
-    account={data.account}
-    {activeNav}
-    {hasNewNotifications}
-    onNavigate={handleFediverseNavigation}
-  />
 <main class="main-content">
 {#if publishSuccess || publishError}
   <div
@@ -2962,12 +2976,6 @@ disabled={
 {/if}
    </main>
 
-  <aside class="right-sidebar">
-  <ProfileSummary account={data.account} />
-  <ReadLaterPanel />
-</aside>
-</div>
-
 <style>
   :global(*) {
     box-sizing: border-box;
@@ -2989,12 +2997,7 @@ disabled={
     font: inherit;
   }
 
-  .app-shell {
-    min-height: 100vh;
-    display: grid;
-grid-template-columns: 252px minmax(0, 1fr) 280px;
-    background: #0a0a0a;
-  }
+
 
   /* Sidebar */
 
@@ -3009,7 +3012,7 @@ grid-template-columns: 252px minmax(0, 1fr) 280px;
     min-width: 0;
     min-height: 100vh;
     background: #0a0a0a;
-    padding: 42px 46px;
+    padding: 0;
   }
 
   .feed-container {
@@ -4045,15 +4048,11 @@ grid-template-columns: 252px minmax(0, 1fr) 280px;
   /* Responsive layout */
 
 @media (max-width: 1100px) {
-  .app-shell {
-    grid-template-columns: 252px minmax(0, 1fr);
-  }
+
 }
 
   @media (max-width: 900px) {
-    .app-shell {
-      grid-template-columns: 210px minmax(0, 1fr);
-    }
+
 
     .main-content {
       padding: 35px 25px;
@@ -4061,10 +4060,7 @@ grid-template-columns: 252px minmax(0, 1fr) 280px;
   }
 
   @media (max-width: 650px) {
-    .app-shell {
-      display: block;
-      padding-bottom: 68px;
-    }
+
 
     .main-content {
       padding: 0 14px 25px;
@@ -5204,19 +5200,10 @@ grid-template-columns: 252px minmax(0, 1fr) 280px;
   }
 }
 
-.right-sidebar {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  min-width: 0;
-padding: 46px 20px 24px 0;
-  box-sizing: border-box;
-}
+
 
 @media (max-width: 1100px) {
-  .right-sidebar {
-    display: none;
-  }
+
 }
 
 /* Lighthouse compact sidebar navigation */
