@@ -15,6 +15,7 @@
 </script>
 
 <svelte:head>
+  <link rel="me" href="https://fedi.davewinter.link/@dw" />
   <link rel="icon" href={favicon} />
 </svelte:head>
 

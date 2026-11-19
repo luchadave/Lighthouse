@@ -16,6 +16,10 @@ I built it primarily for myself, concentrating on the features I use rather than
 
 ![Lighthouse RSS article list](docs/screenshots/articles.jpg)
 
+### Fediverse composer
+
+![Lighthouse Fediverse composer](docs/screenshots/compose.jpg)
+
 ### Article reader
 
 ![Lighthouse article reader](docs/screenshots/reader.jpg)
@@ -51,6 +55,27 @@ I built it primarily for myself, concentrating on the features I use rather than
 
 - One responsive interface for the Fediverse and RSS
 - A shared Read Later view with Fediverse bookmarks and saved RSS articles
+
+## Article sharing and link sanitization
+
+Lighthouse lets you share RSS articles directly to the Fediverse.
+
+The Share button in the article reader opens the existing composer with a prefilled Markdown link:
+
+`🔗 [Article Title | Feed Name](https://example.com/article)`
+
+You can edit the draft before publishing. Nothing is posted automatically.
+
+### Clean links
+
+Lighthouse automatically removes common tracking parameters from URLs when:
+
+- Sharing an RSS article to the Fediverse composer.
+- Copying a Fediverse post link.
+
+The sanitizer removes known tracking identifiers such as `utm_*`, `fbclid`, `gclid`, and `msclkid`, while preserving other query parameters that may be necessary for the link to work.
+
+The original RSS article URL remains unchanged. This is a conservative tracking-parameter cleaner rather than a comprehensive privacy-filtering service.
 
 ## Appearance
 

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { cleanUrl } from '../lib/utils/cleanUrl';
 import ReadLaterPanel from '#lib/components/lighthouse/ReadLaterPanel.svelte';
 import ProfileSummary from '#lib/components/lighthouse/ProfileSummary.svelte';
   import { onMount } from 'svelte';
@@ -1477,7 +1478,7 @@ async function sharePost(post: Post) {
   }
 
   try {
-    await navigator.clipboard.writeText(post.postUrl);
+    await navigator.clipboard.writeText(cleanUrl(post.postUrl));
     publishSuccess = 'Post link copied to clipboard.';
   } catch {
     publishError = 'Could not copy the post link.';
@@ -1495,6 +1496,24 @@ const navigation = [
   onMount(() => {
     if (requestedView && fediverseViews.includes(requestedView)) {
       handleFediverseNavigation(requestedView);
+    }
+
+    if (requestedView === 'Compose') {
+      const url = new URL(window.location.href);
+      const sharedArticle = url.searchParams.get('share');
+
+      if (sharedArticle && !composeText.trim()) {
+        composeText = sharedArticle;
+      }
+
+      if (sharedArticle !== null) {
+        url.searchParams.delete('share');
+        window.history.replaceState(
+          window.history.state,
+          '',
+          url.pathname + url.search + url.hash
+        );
+      }
     }
   });
 

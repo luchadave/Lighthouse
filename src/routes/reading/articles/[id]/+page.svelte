@@ -1,6 +1,8 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { page } from '$app/state';
+  import { Share2 } from '@lucide/svelte';
+  import { cleanUrl } from '../../../../lib/utils/cleanUrl';
 
   type Article = {
     id: number;
@@ -19,6 +21,24 @@
   let error = $state('');
   let actionLoading = $state(false);
 let actionError = $state('');
+
+function shareArticle() {
+  if (!article) return;
+
+  const escapeMarkdown = (value: string) =>
+    value.replaceAll('\\', '\\\\')
+      .replaceAll('[', '\\[')
+      .replaceAll(']', '\\]');
+
+  const title = escapeMarkdown(article.title);
+  const feed = escapeMarkdown(article.source);
+  const url = cleanUrl(article.url);
+
+  const markdown = `🔗 [${title} | ${feed}](${url})`;
+
+  window.location.href =
+    `/?view=Compose&share=${encodeURIComponent(markdown)}`;
+}
 
 async function updateArticle(action: 'read' | 'saved', value: boolean) {
   if (!article || actionLoading) return;
@@ -130,6 +150,16 @@ async function updateArticle(action: 'read' | 'saved', value: boolean) {
     onclick={() => article && updateArticle('saved', !article.saved)}
   >
     {article.saved ? 'Remove from Read Later' : 'Save to Read Later'}
+  </button>
+
+  <button
+    class="share-article-button"
+    type="button"
+    onclick={shareArticle}
+    title="Share to Fediverse"
+    aria-label="Share to Fediverse"
+  >
+    <Share2 size={18} strokeWidth={1.8} />
   </button>
 </div>
 
@@ -306,4 +336,23 @@ async function updateArticle(action: 'read' | 'saved', value: boolean) {
   color: #fda4af;
   font-family: Manrope, sans-serif;
 }
+
+  .article-actions button.share-article-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 38px;
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    border-radius: 50%;
+    color: #f472b6;
+    cursor: pointer;
+  }
+
+  .article-actions button.share-article-button:hover {
+    color: #f9a8d4;
+    border-color: #f472b6;
+  }
+
 </style>
