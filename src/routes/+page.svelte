@@ -926,10 +926,6 @@ async function loadLists() {
 
     lists = result.lists;
     listsLoaded = true;
-
-    if (lists.length > 0) {
-      await selectList(lists[0].id);
-    }
   } catch (error) {
     listsError =
       error instanceof Error
@@ -939,6 +935,12 @@ async function loadLists() {
     loadingLists = false;
   }
 }
+
+onMount(() => {
+  if (data.account) {
+    void loadLists();
+  }
+});
 
 async function selectList(listId: string) {
   selectedListId = listId;
@@ -1721,6 +1723,43 @@ import LighthouseSidebar from '#lib/components/lighthouse/LighthouseSidebar.svel
 
       </div>
 
+{#if activeNav === 'Home'}
+  <section class="lists-view" aria-label="Choose Home or a Hollo list">
+    <div class="list-selector">
+      <button
+        type="button"
+        class="list-pill"
+        class:selected={selectedListId === null}
+        aria-pressed={selectedListId === null}
+        onclick={() => {
+          selectedListId = null;
+        }}
+      >
+        Home
+      </button>
+
+      {#each lists as list (list.id)}
+        <button
+          type="button"
+          class="list-pill"
+          class:selected={selectedListId === list.id}
+          aria-pressed={selectedListId === list.id}
+          onclick={() => selectList(list.id)}
+        >
+          {list.title}
+        </button>
+      {/each}
+    </div>
+
+    {#if listsError}
+      <p class="lists-message">{listsError}</p>
+      <button class="list-pill" type="button" onclick={loadLists}>
+        Try again
+      </button>
+    {/if}
+  </section>
+{/if}
+
 {#if activeNav === 'Lists'}
   <section class="lists-view" aria-label="Your lists">
     {#if loadingLists && lists.length === 0}
@@ -1926,7 +1965,15 @@ import LighthouseSidebar from '#lib/components/lighthouse/LighthouseSidebar.svel
   activeNav === 'Hashtags'}
 
         <div class="timeline">
-{#if activeNav === 'Home' && pendingHomePosts.length > 0}
+{#if activeNav === 'Home' && selectedListId && loadingListPosts && listPosts.length === 0}
+  <p class="timeline-error">Loading list posts…</p>
+{:else if activeNav === 'Home' && selectedListId && listTimelineError}
+  <p class="timeline-error">{listTimelineError}</p>
+{:else if activeNav === 'Home' && selectedListId && !loadingListPosts && listPosts.length === 0}
+  <p class="timeline-error">No posts in this list yet.</p>
+{/if}
+
+{#if activeNav === 'Home' && selectedListId === null && pendingHomePosts.length > 0}
   <div class="new-home-posts">
     <button class="load-more-button" type="button" onclick={showNewHomePosts}>
       Show {pendingHomePosts.length} new {pendingHomePosts.length === 1 ? 'post' : 'posts'}
@@ -2028,7 +2075,7 @@ import LighthouseSidebar from '#lib/components/lighthouse/LighthouseSidebar.svel
     ? profilePosts
     : activeNav === 'Bookmarks'
       ? bookmarkedPosts
-      : activeNav === 'Lists'
+      : activeNav === 'Lists' || (activeNav === 'Home' && selectedListId !== null)
         ? listPosts
         : activeNav === 'Hashtags'
           ? hashtagPosts
@@ -2431,7 +2478,7 @@ import LighthouseSidebar from '#lib/components/lighthouse/LighthouseSidebar.svel
             <p class="timeline-error">{timelineError}</p>
           {/if}
 
-{#if activeNav === 'Home' && nextMaxId}
+{#if activeNav === 'Home' && selectedListId === null && nextMaxId}
             <div class="load-more-container">
               <button
                 class="load-more-button"
@@ -2457,7 +2504,7 @@ import LighthouseSidebar from '#lib/components/lighthouse/LighthouseSidebar.svel
             </div>
           {/if}
 
-          {#if activeNav === 'Lists' && listNextMaxId}
+          {#if (activeNav === 'Lists' || (activeNav === 'Home' && selectedListId !== null)) && listNextMaxId}
             <div class="load-more-container">
               <button
                 class="load-more-button"

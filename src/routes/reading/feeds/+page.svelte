@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { Trash2 } from '@lucide/svelte';
+  import { Trash2, Upload } from '@lucide/svelte';
 
   type Feed = {
     id: number;
@@ -14,6 +14,8 @@
   let feedUrl = $state('');
   let loading = $state(false);
   let deletingFeedId = $state<number | null>(null);
+  let importing = $state(false);
+  let opmlInput: HTMLInputElement;
   let message = $state('');
   let error = $state('');
 
@@ -99,6 +101,52 @@
     }
   }
 
+  async function importOPML(event: Event) {
+    const input = event.currentTarget as HTMLInputElement;
+    const file = input.files?.[0];
+
+    if (!file || importing) return;
+
+    importing = true;
+    message = '';
+    error = '';
+
+    try {
+      const form = new FormData();
+      form.append('file', file);
+
+      const response = await fetch('/api/reading/import', {
+        method: 'POST',
+        body: form
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        error = result.error || 'Unable to import OPML file.';
+        return;
+      }
+
+      const parts = [
+        `${result.imported} imported`,
+        `${result.skipped} already subscribed`
+      ];
+
+      if (result.full > 0) {
+        parts.push(`${result.full} skipped (subscription limit)`);
+      }
+
+      message = `OPML import complete: ${parts.join(', ')}.`;
+
+      await loadFeeds();
+    } catch {
+      error = 'Unable to connect to Lighthouse.';
+    } finally {
+      importing = false;
+      input.value = '';
+    }
+  }
+
   onMount(() => {
     loadFeeds();
   });
@@ -109,7 +157,29 @@
 </svelte:head>
 
 <main class="reading-page">
-  <h1>Feeds</h1>
+  <div class="feeds-header">
+    <h1>Feeds</h1>
+
+    <button
+      type="button"
+      class="import-opml"
+      disabled={importing}
+      onclick={() => opmlInput?.click()}
+    >
+      <Upload size={16} strokeWidth={1.8} />
+      {importing ? 'Importing…' : 'Import OPML'}
+    </button>
+
+    <input
+      bind:this={opmlInput}
+      class="opml-file-input"
+      type="file"
+      accept=".opml,.xml,text/xml,application/xml"
+      aria-label="Choose OPML file"
+      onchange={importOPML}
+    />
+  </div>
+
   <p>Manage your RSS subscriptions.</p>
 
   <form onsubmit={(event) => {
@@ -184,6 +254,42 @@
 
   h1, h2 {
     margin-bottom: 16px;
+  }
+
+  .feeds-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .feeds-header h1 {
+    margin: 0;
+  }
+
+  .import-opml {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 10px;
+    background: transparent;
+    color: #f472b6;
+    border: 0;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  .import-opml:hover:not(:disabled) {
+    background: #302530;
+  }
+
+  .import-opml:focus-visible {
+    outline: 2px solid #f472b6;
+    outline-offset: 2px;
+  }
+
+  .opml-file-input {
+    display: none;
   }
 
   form {
