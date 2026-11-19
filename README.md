@@ -20,10 +20,6 @@ I built it primarily for myself, concentrating on the features I use rather than
 
 ![Lighthouse Fediverse composer](docs/screenshots/compose.jpg)
 
-### Article reader
-
-![Lighthouse article reader](docs/screenshots/reader.jpg)
-
 ### Read Later
 
 ![Lighthouse Read Later view](docs/screenshots/read-later.jpg)
