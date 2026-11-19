@@ -33,6 +33,7 @@ I built it primarily for myself, concentrating on the features I use rather than
 ### Fediverse
 
 - Home and list timelines
+- Lightweight profile previews when hovering over usernames or avatars in timelines and notifications
 - Notifications and follow requests
 - Followed hashtag timelines
 - Composing posts and interacting with posts

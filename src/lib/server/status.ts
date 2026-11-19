@@ -108,6 +108,7 @@ export function mapStatus(status: HolloStatus, profileId: string) {
     boostedBy: status.reblog
       ? (status.account.display_name || status.account.username)
       : null,
+    accountId: author.id,
     name: author.display_name || author.username,
     handle: `@${author.acct}`,
     avatar: author.avatar,

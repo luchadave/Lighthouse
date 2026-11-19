@@ -1,4 +1,5 @@
 <script lang="ts">
+  import ProfilePreview from '../lib/components/lighthouse/ProfilePreview.svelte';
   import { cleanUrl } from '../lib/utils/cleanUrl';
 import ReadLaterPanel from '#lib/components/lighthouse/ReadLaterPanel.svelte';
 import ProfileSummary from '#lib/components/lighthouse/ProfileSummary.svelte';
@@ -85,6 +86,7 @@ type Poll = {
 
 type Post = {
   id: string;
+  accountId: string;
   postUrl: string | null;
   isOwnPost: boolean;
   editableContent: string;
@@ -2103,17 +2105,24 @@ import LighthouseSidebar from '#lib/components/lighthouse/LighthouseSidebar.svel
           {@const youtubeVideoId = getYouTubeVideoId(post)}
             <article class="post-card">
                     <div class="post-avatar-column">
-  <a
-    class="post-profile-avatar"
-    href={post.url}
-    aria-label={`View ${post.name}'s profile`}
+  <ProfilePreview
+    accountId={post.accountId}
+    name={post.name}
+    handle={post.handle}
+    avatar={post.avatar}
   >
-    <img
-      class="post-avatar"
-      src={post.avatar}
-      alt=""
-    />
-  </a>
+    <a
+      class="post-profile-avatar"
+      href={post.url}
+      aria-label={`View ${post.name}'s profile`}
+    >
+      <img
+        class="post-avatar"
+        src={post.avatar}
+        alt=""
+      />
+    </a>
+  </ProfilePreview>
   <div class="timeline-line"></div>
 </div>
 
@@ -2125,10 +2134,17 @@ import LighthouseSidebar from '#lib/components/lighthouse/LighthouseSidebar.svel
     </div>
   {/if}
                 <div class="post-header">
-                  <a class="post-author" href={post.url}>
-  <strong>{post.name}</strong>
-  <span>{post.handle}</span>
-</a>
+                  <ProfilePreview
+  accountId={post.accountId}
+  name={post.name}
+  handle={post.handle}
+  avatar={post.avatar}
+>
+  <a class="post-author" href={post.url}>
+    <strong>{post.name}</strong>
+    <span>{post.handle}</span>
+  </a>
+</ProfilePreview>
                   <div class="post-meta">
                     {new Date(post.time).toLocaleString()}
                     {#if post.isOwnPost}
@@ -2914,28 +2930,42 @@ disabled={
     {#if notifications.length > 0}
       {#each notifications as notification (notification.id)}
         <article class="notification-card">
-        <a
-  class="notification-profile-avatar"
-  href={notification.account.url}
-  aria-label={`View ${notification.account.display_name || notification.account.username}'s profile`}
->
-  <img
-    class="notification-avatar"
-    src={notification.account.avatar}
-    alt=""
-  />
-</a>
+        <ProfilePreview
+          accountId={notification.account.id}
+          name={notification.account.display_name || notification.account.username}
+          handle={`@${notification.account.acct}`}
+          avatar={notification.account.avatar}
+        >
+          <a
+            class="notification-profile-avatar"
+            href={notification.account.url}
+            aria-label={`View ${notification.account.display_name || notification.account.username}'s profile`}
+          >
+            <img
+              class="notification-avatar"
+              src={notification.account.avatar}
+              alt=""
+            />
+          </a>
+        </ProfilePreview>
           <div class="notification-content">
             <div class="notification-header">
               <div class="notification-message">
-                <a
-  class="notification-profile-name"
-  href={notification.account.url}
->
-  <strong>
-    {notification.account.display_name || notification.account.username}
-  </strong>
-</a>
+                <ProfilePreview
+                  accountId={notification.account.id}
+                  name={notification.account.display_name || notification.account.username}
+                  handle={`@${notification.account.acct}`}
+                  avatar={notification.account.avatar}
+                >
+                  <a
+                    class="notification-profile-name"
+                    href={notification.account.url}
+                  >
+                    <strong>
+                      {notification.account.display_name || notification.account.username}
+                    </strong>
+                  </a>
+                </ProfilePreview>
                 <span>{getNotificationMessage(notification)}</span>
               </div>
 
