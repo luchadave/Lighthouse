@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { Trash2 } from '@lucide/svelte';
 
   type Feed = {
     id: number;
@@ -12,6 +13,7 @@
   let feeds: Feed[] = $state([]);
   let feedUrl = $state('');
   let loading = $state(false);
+  let deletingFeedId = $state<number | null>(null);
   let message = $state('');
   let error = $state('');
 
@@ -61,6 +63,42 @@
     }
   }
 
+  async function removeFeed(feed: Feed) {
+    if (deletingFeedId !== null) return;
+
+    const confirmed = window.confirm(
+      `Remove "${feed.title}" from your subscriptions?\n\n` +
+      'Saved articles will remain in Read Later.'
+    );
+
+    if (!confirmed) return;
+
+    deletingFeedId = feed.id;
+    message = '';
+    error = '';
+
+    try {
+      const response = await fetch(
+        `/api/reading/feeds/${feed.id}`,
+        { method: 'DELETE' }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        error = result.error || 'Unable to remove subscription.';
+        return;
+      }
+
+      feeds = feeds.filter((item) => item.id !== feed.id);
+      message = `Removed ${feed.title}`;
+    } catch {
+      error = 'Unable to connect to Lighthouse.';
+    } finally {
+      deletingFeedId = null;
+    }
+  }
+
   onMount(() => {
     loadFeeds();
   });
@@ -106,7 +144,21 @@
   {:else}
     {#each feeds as feed (feed.id)}
       <article class="feed">
-        <strong>{feed.title}</strong>
+        <div class="feed-heading">
+          <strong>{feed.title}</strong>
+
+          <button
+            type="button"
+            class="remove-feed"
+            title={`Remove ${feed.title}`}
+            aria-label={`Remove ${feed.title}`}
+            disabled={deletingFeedId !== null}
+            onclick={() => removeFeed(feed)}
+          >
+            <Trash2 size={17} strokeWidth={1.8} />
+          </button>
+        </div>
+
         <small>{feed.url}</small>
 
         {#if feed.error}
@@ -125,8 +177,8 @@
 
   .reading-page {
     max-width: 760px;
-    margin: 48px auto;
-    padding: 24px;
+    margin: 0 auto;
+    padding: 0;
     font-family: Manrope, sans-serif;
   }
 
@@ -170,6 +222,42 @@
     margin: 12px 0;
     background: #171717;
     border-radius: 8px;
+  }
+
+  .feed-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .feed-heading strong {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .remove-feed {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    background: transparent;
+    color: #a3a3a3;
+    border: 1px solid transparent;
+    border-radius: 8px;
+  }
+
+  .remove-feed:hover:not(:disabled) {
+    background: #302530;
+    color: #f472b6;
+  }
+
+  .remove-feed:focus-visible {
+    outline: 2px solid #f472b6;
+    outline-offset: 2px;
   }
 
   .feed small {

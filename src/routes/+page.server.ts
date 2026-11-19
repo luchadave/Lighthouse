@@ -61,10 +61,6 @@ export const load: PageServerLoad = async ({
   fetch,
   setHeaders
 }) => {
-  setHeaders({
-    'Cache-Control': 'no-store'
-  });
-
   const session = getSession(cookies);
 
   if (!session) {

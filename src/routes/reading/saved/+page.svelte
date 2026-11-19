@@ -307,8 +307,8 @@ let savedItems = $derived.by((): SavedItem[] => {
 
   .reading-page {
     max-width: 760px;
-    margin: 48px auto;
-    padding: 24px;
+    margin: 0 auto;
+    padding: 0;
     font-family: Manrope, sans-serif;
   }
 

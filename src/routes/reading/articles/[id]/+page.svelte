@@ -166,8 +166,8 @@ async function updateArticle(action: 'read' | 'saved', value: boolean) {
 
   .reader {
     max-width: 780px;
-    margin: 48px auto;
-    padding: 24px;
+    margin: 0 auto;
+    padding: 0;
   }
 
   nav {
