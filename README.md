@@ -10,6 +10,12 @@ Lighthouse is a lightweight, self-hosted web application that brings a Fediverse
 
 I built it primarily for myself, concentrating on the features I use rather than trying to make a comprehensive social networking client or feed reader. I love RSS and feed readers: they're a way to follow the web directly, without having an algorithm choose what matters. Lighthouse puts that reading alongside the Fediverse conversations I follow.
 
+## Video demonstration
+
+Click the image below to watch a short demonstration of Lighthouse.
+
+[![Watch the Lighthouse demonstration](docs/screenshots/home.jpg)](docs/videos/lighthouse-demo.mp4)
+
 ## Screenshots
 
 ### Fediverse home
