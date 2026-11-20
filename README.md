@@ -12,9 +12,9 @@ I built it primarily for myself, concentrating on the features I use rather than
 
 ## Video demonstration
 
-Click the image below to watch a short demonstration of Lighthouse.
+A short demonstration of Lighthouse in action.
 
-[![Watch the Lighthouse demonstration](docs/screenshots/home.jpg)](docs/videos/lighthouse-demo.mp4)
+https://github.com/user-attachments/assets/edb45bc1-a011-4400-af5e-0b875a75c2e6
 
 ## Screenshots
 
